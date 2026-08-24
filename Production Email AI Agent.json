@@ -1,0 +1,544 @@
+{
+  "name": "Production Email AI Agent - Intent Classifier & Auto-Reply Router",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1280,
+        -208
+      ],
+      "id": "3e19bfd3-104a-4826-aac6-e28610904971",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2tSkMqn5jjyit9oz",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24bfc060-a968-4f8c-8fda-2bd2e3c248e4",
+              "name": "threadId",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            },
+            {
+              "id": "6194fcbe-4a9c-4839-90b2-794327ea1d06",
+              "name": "snippet",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            },
+            {
+              "id": "3dc2996d-e350-410d-b8a7-3d512c85a149",
+              "name": "Subject",
+              "value": "={{ $json.Subject }}",
+              "type": "string"
+            },
+            {
+              "id": "b8cd978e-ca71-4ecf-9cf4-103738078305",
+              "name": "From",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1104,
+        -208
+      ],
+      "id": "325582a6-e5ce-4088-b850-543d48057a9e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "inputText": "=Subject: {{ $json.Subject }}\nBody:\n{{ $json.snippet }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Spam",
+              "description": "Unsolicited promotional emails, marketing spam, phishing attempts, SEO backlink sales, crypto schemes, fake rewards, or automated bot messages."
+            },
+            {
+              "category": "Business_Inquiry",
+              "description": "Legitimate technical or project requests explicitly asking about custom software services, tech stacks (AI/RAG, MERN, Flutter, .NET, ML, automation), pricing quotes, consultation bookings, or project quotes."
+            },
+            {
+              "category": "General_Inquiry",
+              "description": "Non-spam client emails that do not require technical knowledge base lookups, such as simple greetings, thank-you notes, meeting confirmation follow-ups, or basic non-technical messages."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -880,
+        -208
+      ],
+      "id": "8468c1b4-bd3f-40e7-beee-9ec68809a6a2",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        48
+      ],
+      "id": "a3edbe7f-1c22-41a7-9098-ed21ad4fbfeb",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "mQyB6Co30v41sci9",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "==Draft a high-converting, technical proposal email reply for the incoming business inquiry below.\n\nMANDATORY FIRST STEP: Call the Pinecone Vector Store Tool using the snippet provided below to fetch relevant technical context and RAG architecture experience.\n\nEMAIL DETAILS:\n- Sender Name & Email: {{ $('Edit Fields').item.json.From }}\n- Subject Line: {{ $('Edit Fields').item.json.Subject }}\n- Email Content: {{ $('Edit Fields').item.json.snippet }}\n- Thread ID: {{ $('Edit Fields').item.json.threadId }}\n\nOUTPUT REQUIREMENTS:\nDraft a personalized response confirming expertise in secure internal document RAG pipelines, LangChain integrations, and offer next steps to discuss their enterprise project.",
+        "options": {
+          "systemMessage": "You are the AI Assistant for Asif AI Solutions, an enterprise software development and AI engineering consultancy founded by Asif Hussain.\n\nYOUR ROLE:\nDraft precise, professional, and tailored email responses to incoming client inquiries using the internal knowledge base retrieved from Pinecone.\n\nINSTRUCTIONS & CONSTRAINTS:\n1. ALWAYS execute the Pinecone Vector Store Tool FIRST using the client's email body/snippet to fetch relevant service offerings, RAG architecture capabilities, tech stacks (LangChain, FastAPI, Python, React, Pinecone, ChromaDB), pricing models, and founder profile details.\n2. Base all technical details ONLY on facts retrieved from the Pinecone tool. Do not hallucinate, invent tools, or offer unlisted capabilities.\n3. Maintain a professional, clear, confident, and highly competent technical tone.\n4. Output your response so it can be parsed into structured variables for the Gmail reply node (Subject Line and Email Body).\n5. Address the client warmly, answer their specific architectural needs (RAG, enterprise documents, security), and invite them to schedule a discovery consultation call with Asif Hussain."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -304,
+        -192
+      ],
+      "id": "49906705-f402-40c3-9e88-b71697f32b70",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        64
+      ],
+      "id": "e834d3ee-339f-4115-aed9-b5fa900571b3",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "mQyB6Co30v41sci9",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "ALWAYS USE THIS TOOL FIRST BEFORE ANSWERING. Use this tool to search and retrieve accurate information regarding Asif AI Solutions and founder Asif Hussain, including service offerings, technical stack capabilities (LangChain, FastAPI, Python, RAG pipelines, MERN, Flutter, .NET Core, Machine Learning), internal document security approaches, pricing, and project consultation availability.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "chatbot",
+          "mode": "list",
+          "cachedResultName": "chatbot"
+        },
+        "options": {
+          "pineconeNamespace": "asif_ai"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        80
+      ],
+      "id": "f3108958-7ad9-486e-929f-e9b62cc89d53",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "ZbGpKFgkjzAlBpXU",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        272
+      ],
+      "id": "38f35b78-134e-428d-b1d9-a6840e8ebdcd",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "bvRb2IDeQZm6JngP",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $input.first().json.output;\n\n// Extract Subject (captures text between **Subject:** and the first newline)\nconst subjectMatch = rawText.match(/\\*\\*Subject:\\*\\*\\s*(.*?)\\s*\\n/i);\nconst subject = subjectMatch ? subjectMatch[1].trim() : \"Re: Your Inquiry\";\n\n// Extract Body (captures text between **Body:** and **End of response** or end of string)\nlet body = \"\";\nconst bodyMatch = rawText.match(/\\*\\*Body:\\*\\*\\s*([\\s\\S]*?)(?=\\n---\\s*\\n\\*\\*End of response\\*\\*|$)/i);\n\nif (bodyMatch) {\n  body = bodyMatch[1].trim();\n} else {\n  // Fallback if formatting varies slightly\n  body = rawText.replace(/\\*\\*Subject:\\*\\*\\s*.*?\\n/i, \"\").replace(/\\*\\*Body:\\*\\*/i, \"\").trim();\n}\n\nreturn {\n  json: {\n    subject: subject,\n    message: body\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -192
+      ],
+      "id": "1cfacbeb-fc00-4639-966d-883a70827381",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9be898a6-1fc9-496c-91ed-1e6999c7336c",
+              "name": "subject",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "754f9d8d-3896-431c-90c6-ef1c0ff2417c",
+              "name": "message",
+              "value": "={{ $json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "0d9ca36b-40d9-4ec2-97ff-925f4a3c6027",
+              "name": "threadId",
+              "value": "=",
+              "type": "string"
+            },
+            {
+              "id": "97379ccf-ba66-4e79-ae81-da076e2ee0e5",
+              "name": "threadId",
+              "value": "={{ $('Edit Fields').item.json.threadId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        288,
+        -192
+      ],
+      "id": "be468fea-f6d8-4bab-b815-96f643789094",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Edit Fields').first().json.threadId }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        512,
+        -192
+      ],
+      "id": "9c15db07-0a0a-4e07-8e2f-fb00e4ec6b23",
+      "name": "Reply to a message",
+      "webhookId": "be651fee-5f63-4763-88c9-eeb95d89dbc5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2tSkMqn5jjyit9oz",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -496
+      ],
+      "id": "3594bc7b-ef3a-4ff0-90cb-4e6b11ca51df",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "==Draft a polite, professional email reply for the incoming general inquiry below.\n\nEMAIL DETAILS:\n- Sender Email: {{ $('Edit Fields').item.json.From }}\n- Subject Line: {{ $('Edit Fields').item.json.Subject }}\n- Email Content: {{ $('Edit Fields').item.json.snippet }}\n- Thread ID: {{ $('Edit Fields').item.json.threadId }}\n\nOUTPUT REQUIREMENTS:\n- Acknowledge their email warmly.\n- Address their specific note or question without making ungrounded technical claims.\n- Provide a polite sign-off on behalf of Asif AI Solutions.",
+        "options": {
+          "systemMessage": "You are the AI Assistant for Asif AI Solutions, an enterprise software development and AI engineering consultancy founded by Asif Hussain.\n\nYOUR ROLE:\nDraft polite, professional, and concise email replies to general, non-technical incoming messages (such as simple greetings, thank-you notes, meeting follow-ups, or standard contact requests).\n\nINSTRUCTIONS & CONSTRAINTS:\n1. Do NOT invent or speculate about detailed technical specifications, exact project pricing, or non-disclosed service offerings.\n2. Maintain a warm, responsive, confident, and professional tone.\n3. Acknowledge the sender's message directly and offer next steps (e.g., offering to answer further questions or connect with Asif Hussain).\n4. Format your output clearly so it includes both the Subject Line and Email Body structure."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -544,
+        384
+      ],
+      "id": "0aee1408-2d0b-4919-809e-62f4477bbc28",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        608
+      ],
+      "id": "17750383-2fbc-4b6d-bf21-90cc6c90587b",
+      "name": "Groq Chat Model2",
+      "credentials": {
+        "groqApi": {
+          "id": "mQyB6Co30v41sci9",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $input.first().json.output;\n\n// Extract Subject (captures text between **Subject:** and the first newline)\nconst subjectMatch = rawText.match(/\\*\\*Subject:\\*\\*\\s*(.*?)\\s*\\n/i);\nconst subject = subjectMatch ? subjectMatch[1].trim() : \"Re: Your Inquiry\";\n\n// Extract Body (captures text between **Body:** and **End of response** or end of string)\nlet body = \"\";\nconst bodyMatch = rawText.match(/\\*\\*Body:\\*\\*\\s*([\\s\\S]*?)(?=\\n---\\s*\\n\\*\\*End of response\\*\\*|$)/i);\n\nif (bodyMatch) {\n  body = bodyMatch[1].trim();\n} else {\n  // Fallback if formatting varies slightly\n  body = rawText.replace(/\\*\\*Subject:\\*\\*\\s*.*?\\n/i, \"\").replace(/\\*\\*Body:\\*\\*/i, \"\").trim();\n}\n\nreturn {\n  json: {\n    subject: subject,\n    message: body\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        448
+      ],
+      "id": "c15f0a4e-b3a3-47cc-8df5-c70c81ffa139",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Edit Fields').first().json.threadId }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        416
+      ],
+      "id": "2627ffaa-b59a-4b24-ad48-3f05409aeff2",
+      "name": "Reply to a message1",
+      "webhookId": "972c45ad-f418-416f-ad06-842177ed3a80",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2tSkMqn5jjyit9oz",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "40b1b5bc-4615-4917-a71a-ef1aba7df952",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "840d1ca065ebe94281926c9fd2ef266f1b4a97d5e319955dd771255da0fbea76"
+  },
+  "nodeGroups": [],
+  "id": "ITEjGkxVAmdNWu8E",
+  "tags": []
+}
