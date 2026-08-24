@@ -11,6 +11,14 @@ An end-to-end, enterprise-grade automated email triage and intelligent RAG respo
 This system acts as an autonomous 24/7 technical sales and operations assistant. It ingests incoming emails, classifies client intent into three execution routes, performs semantic vector search over internal knowledge bases, and drafts thread-aware, context-grounded email responses.
 
 ---
+<div align="center">
+  <h2>🎥 System Execution Demo</h2>
+  <video src="https://github.com/user-attachments/assets/ce715438-641a-4324-b16b-9d5151fcba8f" controls="controls" width="100%" style="max-width: 850px; border-radius: 8px;">
+    Your browser does not support playing HTML video.
+  </video>
+  <p><em>End-to-end execution showing multi-path classification, Pinecone vector search, and automated Gmail threading.</em></p>
+</div>
+---
 
 ## 🏗 Workflow Architecture
 
